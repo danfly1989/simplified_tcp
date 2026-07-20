@@ -6,7 +6,7 @@
 /*   By: daflynn <daflynn@student.42berlin.de>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/20 13:30:41 by daflynn           #+#    #+#             */
-/*   Updated: 2026/07/20 15:16:10 by daflynn          ###   ########.fr       */
+/*   Updated: 2026/07/20 19:14:29 by daflynn          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,7 @@ int main()
 	struct sockaddr_in client_addr;
 	socklen_t client_len = sizeof(client_addr);
 	char buffer[1024];
+	int opt = 1;
 
 	// 1, Create a socket
 	server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -30,10 +31,9 @@ int main()
 	{
 		perror("socket");
 		exit(1);
-	}
+	}else
 
 	//allow quick restart
-	int opt = 1;
 	setsockopt(server_fd, SOL_SOCKET,SO_REUSEADDR, &opt, sizeof(opt));
 
 	//bind
@@ -69,11 +69,13 @@ int main()
 			ntohs(client_addr.sin_port));
 
 	//simple receive
+	while(1){
 	int n = recv(client_fd, buffer, sizeof(buffer)-1, 0);
-	if(n > 0){
+	if(n > 0)
+		{
 		buffer[n] = '\0';
 		printf("Received: %s\n", buffer);
-	
+		}
 	}
 	close(client_fd);
 	close(server_fd);
