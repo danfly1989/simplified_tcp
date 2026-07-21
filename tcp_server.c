@@ -6,7 +6,7 @@
 /*   By: daflynn <daflynn@student.42berlin.de>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/20 13:30:41 by daflynn           #+#    #+#             */
-/*   Updated: 2026/07/21 12:17:16 by daflynn          ###   ########.fr       */
+/*   Updated: 2026/07/21 12:51:34 by daflynn          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@ int main()
 	int opt = 1;
 	int client_fds[MAX_CLIENTS];
 	fd_set read_fds; 
-
+	
 	for(int i =0; i < MAX_CLIENTS; i++)
 		client_fds[i] = -1; 
 
@@ -65,26 +65,62 @@ int main()
 
 	//receive loop 
 	while(1){
-		printf("waiting for client...\n");
-		int new_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
-		printf("Client connected from %s:%d\n",
-				inet_ntoa(client_addr.sin_addr),
-				ntohs(client_addr.sin_port));
+		//build set
+		FD_ZERO(&read_fds);
+		FD_SET(server_fd, &read_fds);
+		int max_fd = server_fd;
 		for (int i = 0; i < MAX_CLIENTS; i++)
 		{
 			if(client_fds[i] == -1)
 			{
-				client_fds[i] = new_fd;
+				FD_SET(client_fds[i], &read_fds);
+				if(client_fds[i] > max_fd)
+					max_fd = client_fds[i];
 				break;
 			}
 		}
-	//try to read from the client we just accepted
-		int n = recv(new_fd, buffer, sizeof(buffer)-1, 0);
-		if(n>0)
+		
+		//select
+		select(max_fd + 1, &read_fds, NULL, NULL, NULL);
+
+		//check listener
+		if(FD_ISSET(server_fd, &read_fds))
 		{
-			buffer[n] = '\0';
-			printf("Received: %s\n", buffer);
+			int new_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
+			printf("Client connected fomr %s:%d\n",
+					inet_ntoa(client_addr.sin_addr),
+					ntohs(client_addr.sin_port));
+			for(int i = 0; i < MAX_CLIENTS; i++)
+			{
+				if(client_fds[i] == -1)
+				{
+					client_fds[i] = new_fd;
+					break; 
+				}
+			}
 		}
+
+		//check every client
+		for(int i = 0; i < MAX_CLIENTS;i++)
+		{
+			if(client_fds[i] != -1 && FD_ISSET(client_fds[i], &read_fds))
+			{
+				int n = recv(client_fds[i], buffer, sizeof(buffer)-1,0);
+				if(n > 0)
+				{
+					buffer[n] = '\0';
+					printf("Received from fd %d: %s\n", client_fds[i], buffer);
+				}
+				else
+				{
+					printf("Client on fd %d disconnected.\n", client_fds[i]);
+							close(client_fds[i]);
+								client_fds[i] = -11; 
+				}
+			}
+		}
+
+
 	}
 	close(client_fd);
 	close(server_fd);
