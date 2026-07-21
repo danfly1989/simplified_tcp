@@ -6,7 +6,7 @@
 /*   By: daflynn <daflynn@student.42berlin.de>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/20 13:30:41 by daflynn           #+#    #+#             */
-/*   Updated: 2026/07/21 12:51:34 by daflynn          ###   ########.fr       */
+/*   Updated: 2026/07/21 13:04:05 by daflynn          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,12 +71,11 @@ int main()
 		int max_fd = server_fd;
 		for (int i = 0; i < MAX_CLIENTS; i++)
 		{
-			if(client_fds[i] == -1)
+			if(client_fds[i] != -1)
 			{
 				FD_SET(client_fds[i], &read_fds);
 				if(client_fds[i] > max_fd)
 					max_fd = client_fds[i];
-				break;
 			}
 		}
 		
@@ -87,7 +86,7 @@ int main()
 		if(FD_ISSET(server_fd, &read_fds))
 		{
 			int new_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
-			printf("Client connected fomr %s:%d\n",
+			printf("Client connected from %s:%d\n",
 					inet_ntoa(client_addr.sin_addr),
 					ntohs(client_addr.sin_port));
 			for(int i = 0; i < MAX_CLIENTS; i++)
@@ -115,7 +114,7 @@ int main()
 				{
 					printf("Client on fd %d disconnected.\n", client_fds[i]);
 							close(client_fds[i]);
-								client_fds[i] = -11; 
+								client_fds[i] = -1; 
 				}
 			}
 		}
