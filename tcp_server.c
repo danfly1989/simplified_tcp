@@ -6,7 +6,7 @@
 /*   By: daflynn <daflynn@student.42berlin.de>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/20 13:30:41 by daflynn           #+#    #+#             */
-/*   Updated: 2026/07/21 11:59:44 by daflynn          ###   ########.fr       */
+/*   Updated: 2026/07/21 12:17:16 by daflynn          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,8 @@
 #include <string.h>
 #include <arpa/inet.h>
 
+#define MAX_CLIENTS 10
+
 int main()
 {
 	int server_fd, client_fd;
@@ -24,6 +26,11 @@ int main()
 	socklen_t client_len = sizeof(client_addr);
 	char buffer[1024];
 	int opt = 1;
+	int client_fds[MAX_CLIENTS];
+	fd_set read_fds; 
+
+	for(int i =0; i < MAX_CLIENTS; i++)
+		client_fds[i] = -1; 
 
 	// 1, Create a socket
 	server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -56,30 +63,27 @@ int main()
 	printf("server listening on port 6667...\n");
 	printf("waiting for client...\n");
 
-	//accept one client
-	client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
-	if(client_fd < 0)
-	{
-		perror("accept");
-		exit(1);
-	}
-
-	printf("Client connected from %s:%d\n",
-			inet_ntoa(client_addr.sin_addr),
-			ntohs(client_addr.sin_port));
-
 	//receive loop 
 	while(1){
-	int n = recv(client_fd, buffer, sizeof(buffer)-1, 0);
-	if(n > 0)
+		printf("waiting for client...\n");
+		int new_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
+		printf("Client connected from %s:%d\n",
+				inet_ntoa(client_addr.sin_addr),
+				ntohs(client_addr.sin_port));
+		for (int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if(client_fds[i] == -1)
+			{
+				client_fds[i] = new_fd;
+				break;
+			}
+		}
+	//try to read from the client we just accepted
+		int n = recv(new_fd, buffer, sizeof(buffer)-1, 0);
+		if(n>0)
 		{
 			buffer[n] = '\0';
 			printf("Received: %s\n", buffer);
-		}
-	else if (n ==0)
-		{
-			printf("Client disconnect.\n");
-			break;
 		}
 	}
 	close(client_fd);
