@@ -6,7 +6,7 @@
 /*   By: daflynn <daflynn@student.42berlin.de>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/20 13:30:41 by daflynn           #+#    #+#             */
-/*   Updated: 2026/07/20 19:14:29 by daflynn          ###   ########.fr       */
+/*   Updated: 2026/07/21 11:59:44 by daflynn          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,7 @@ int main()
 	{
 		perror("socket");
 		exit(1);
-	}else
+	}
 
 	//allow quick restart
 	setsockopt(server_fd, SOL_SOCKET,SO_REUSEADDR, &opt, sizeof(opt));
@@ -53,8 +53,8 @@ int main()
 		perror("listen");
 		exit(1);
 	}
-	printf("server listening\n");
-	printf("waiting for client\n");
+	printf("server listening on port 6667...\n");
+	printf("waiting for client...\n");
 
 	//accept one client
 	client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
@@ -68,13 +68,18 @@ int main()
 			inet_ntoa(client_addr.sin_addr),
 			ntohs(client_addr.sin_port));
 
-	//simple receive
+	//receive loop 
 	while(1){
 	int n = recv(client_fd, buffer, sizeof(buffer)-1, 0);
 	if(n > 0)
 		{
-		buffer[n] = '\0';
-		printf("Received: %s\n", buffer);
+			buffer[n] = '\0';
+			printf("Received: %s\n", buffer);
+		}
+	else if (n ==0)
+		{
+			printf("Client disconnect.\n");
+			break;
 		}
 	}
 	close(client_fd);
